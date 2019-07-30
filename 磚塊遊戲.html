@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>磚塊小遊戲</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        canvas {
+            background: #eee;
+            display: block;
+            margin: 0 50px auto auto;
+            
+   
+        }
+        .button{
+            
+            
+            
+            width: 100px;
+            height: 50px;
+            
+        }
+        p{
+          font-size: 30px;  
+        }
+        .speed{
+            width: 80px;
+            height: 80px;
+            background-color:#0095DD; 
+            border-radius:50%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="myCanvas" width="1200" height="600"></canvas>
+    <button class="speed" onclick="Plus()"><p>+</p></button>
+    <button class="speed" onclick="Minus()"><p>-</p></button>
+    <button onclick="Start()" class="button"><p>Start</p></button>
+    <button onclick="Stop()" class="button"><p>Stop</p></button>
+    <script>
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        //定義球變數
+        var x = canvas.width / 2;
+        var y = canvas.height - 30;
+        var dx = 2;
+        var dy = -2;
+        var ballradius = 20;
+        //定義球拍變數
+        var paddleHeight = 20;
+        var paddleWidth = 100;
+        var paddleX = (canvas.width - paddleWidth) / 2;
+        //定義鍵盤變數
+        var rightPressed = false;
+        var leftPressed = false;
+        //定義磚塊變數
+        var brickRowCount = 4;
+        var brickColumnCount = 13;
+        var brickWidth = 75;
+        var brickHeight = 20;
+        var brickPadding = 10;
+        var brickOffsetTop = 30;
+        var brickOffsetLeft = 50;
+        var bricks = [];
+        for (c = 0; c < brickColumnCount; c++) {
+            bricks[c] = [];
+            for (r = 0; r < brickRowCount; r++) {
+                bricks[c][r] = { x: 0, y: 0, status: 1 };
+            }
+        }
+        //開關變數
+        var stopbtn = 0;
+        //定義分數變數
+        var score = 0;
+
+
+        
+        //製作球體
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballradius, 0, Math.PI * 2);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+        //球的運動
+        function move() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            collisionDetection()
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            drawScore();
+
+            if (x + dx > canvas.width - ballradius || x + dx < ballradius) {
+                dx = -dx;
+            }                                           //製作反彈
+            if (y + dy < ballradius) {
+                dy = -dy;
+            } else if (y + dy > canvas.height - ballradius) {
+                if (x > paddleX && x < paddleX + paddleWidth) {
+                    dy = -dy;
+                }
+                else {
+                    alert("GAME OVER");
+                    document.location.reload();
+                }
+            }
+
+            if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                paddleX += 7;
+            }                                           //鍵盤移動
+            else if (leftPressed && paddleX > 0) {
+                paddleX -= 7;
+            }
+            x += dx;
+            y += dy;
+        }
+
+
+        //製作球拍
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+
+        //遙控球拍
+        document.addEventListener("keydown", keydownhandler, false);    //監聽鍵盤按下
+        document.addEventListener("keyup", keyuphandler, false);        //監聽鍵盤放開
+
+        function keydownhandler(e) {
+            if (e.keyCode == 39) {
+                rightPressed = true;
+            }
+            else if (e.keyCode == 37) {
+                leftPressed = true;
+            }
+        }
+
+        function keyuphandler(e) {
+            if (e.keyCode == 39) {
+                rightPressed = false;
+            }
+            else if (e.keyCode == 37) {
+                leftPressed = false;
+            }
+        }
+
+        //製作磚塊
+        function drawBricks() {
+            for (c = 0; c < brickColumnCount; c++) {
+                for (r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status == 1) {
+                        var brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+                        var brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                        ctx.fillStyle = "#0095DD";
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        //碰撞感測器
+        function collisionDetection() {
+            for (c = 0; c < brickColumnCount; c++) {
+                for (r = 0; r < brickRowCount; r++) {
+                    var b = bricks[c][r];
+                    if (b.status == 1) {
+                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy;
+                            b.status = 0;
+                            score++
+                            if (score == brickColumnCount * brickRowCount) {
+                                alert("YOU WIN, CONGRATULATIONS!");
+                                document.location.reload();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //製作計分器
+        function drawScore() {
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#0095DD";
+            ctx.fillText("Score: " + score, 8, 20);
+        }
+
+        
+        //開始與結束按鍵
+        
+        function Start(){
+            stopbtn = setInterval(move, 10);        //每間格十毫秒重複呼叫函式
+        }
+        function Stop(){
+            clearInterval(stopbtn);
+        }
+
+        //加速與減速函式
+        function Plus(){
+            x=x+dx+dx;
+            y=y+dy+dy;
+        }
+        function Minus(){
+            x-=10;
+            y-=10;
+        }
+        move();
+    </script>
+</body>
+
+</html>
